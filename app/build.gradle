@@ -1,0 +1,56 @@
+apply plugin: 'com.android.application'
+apply plugin: 'com.mob.sdk'
+
+android {
+    signingConfigs {
+        debug {
+            storeFile file('D:\\Android\\work project\\debug.keystore')
+            storePassword 'debug123.com'
+            keyAlias = 'debug'
+            keyPassword 'debug123.com'
+        }
+    }
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "io.filenet.votedemo"
+        minSdkVersion 22
+        targetSdkVersion 28
+        versionCode 2
+        versionName "1.0.01"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'com.contrarywind:Android-PickerView:3.2.7'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation project(path: ':ijkplayer')
+
+    implementation 'com.jakewharton:butterknife:10.2.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
+}
+
+MobSDK {
+    appKey "2edf1d4e15a62"
+    appSecret "a12d149397f361d77ae70b1aafba88e4"
+    SMSSDK {}
+}

@@ -5,13 +5,17 @@ import android.content.Context;
 import android.graphics.Color;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ContextThemeWrapper;
+import androidx.core.view.ViewCompat;
 import androidx.fragment.app.FragmentActivity;
+import io.filenet.xlvideoplayer.R;
 
 public class SystemUtil {
 
@@ -56,19 +60,19 @@ public class SystemUtil {
         }
     }
 
-    public static void showNotFulltStatusBar(Context context){
+    public static void showNotFulltStatusBar(Context context, int colorId){
         if (context instanceof FragmentActivity) {
             FragmentActivity fragmentActivity = (FragmentActivity) context;
             fragmentActivity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN
                             |WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,
                     WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-            fragmentActivity.getWindow().setStatusBarColor(Color.BLACK);
+            fragmentActivity.getWindow().setStatusBarColor(colorId);
         } else if (context instanceof Activity) {
             Activity activity = (Activity) context;
             activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN
                             |WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,
                     WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-            activity.getWindow().setStatusBarColor(Color.BLACK);
+            activity.getWindow().setStatusBarColor(colorId);
         } else {
             getAppCompActivity(context).getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -86,9 +90,8 @@ public class SystemUtil {
                 }
             }
         }
-        if (statusBar) {
-            showNotFulltStatusBar(context);
-        }
+        if (statusBar)
+            hideFulltStatusBar(context);
     }
 
     public static int dip2px(Context context, float dipValue) {
@@ -133,5 +136,24 @@ public class SystemUtil {
             e.printStackTrace();
         }
         return systemBrightness;
+    }
+
+    public static void setStatusBarColor(Activity activity, int statusColor) {
+        Window window = activity.getWindow();
+        //取消状态栏透明
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        //添加Flag把状态栏设为可绘制模式
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        //设置状态栏颜色
+        window.setStatusBarColor(statusColor);
+        //设置系统状态栏处于可见状态
+        window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+        //让view不根据系统窗口来调整自己的布局
+        ViewGroup mContentView = (ViewGroup) window.findViewById(Window.ID_ANDROID_CONTENT);
+        View mChildView = mContentView.getChildAt(0);
+        if (mChildView != null) {
+            ViewCompat.setFitsSystemWindows(mChildView, false);
+            ViewCompat.requestApplyInsets(mChildView);
+        }
     }
 }

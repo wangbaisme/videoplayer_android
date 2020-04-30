@@ -1,151 +1,103 @@
 package io.filenet.xlvideoplayer.ui.activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-import io.filenet.xlvideoplayer.R;
-
-import android.annotation.SuppressLint;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.bigkoo.pickerview.TimePickerView;
+import com.google.android.material.tabs.TabLayout;
 
-import java.text.DateFormat;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import io.filenet.xlvideoplayer.R;
+import io.filenet.xlvideoplayer.ui.fragment.MineFragment;
+import io.filenet.xlvideoplayer.ui.fragment.RankingFragment;
+import io.filenet.xlvideoplayer.ui.fragment.StudyFragment;
+import io.filenet.xlvideoplayer.view.NoScrollViewPager;
 
-    private long expired;
-    private TextView tv;
-    private TimePickerView pvTime;
-    private Button update;
-    private EditText et;
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-        tv = findViewById(R.id.tv);
-        et = findViewById(R.id.et);
-        selectData();
+public class MainActivity extends BasicActivity {
+
+    @BindView(R.id.main_viewpager)
+    NoScrollViewPager mMainViewPager;
+    @BindView(R.id.main_tablayout)
+    TabLayout mMainTabLayout;
+    @BindView(R.id.ll_fill)
+    LinearLayout mLlFill;
+
+    LinearLayout.LayoutParams params;
+    LinearLayout.LayoutParams params_ll;
+    private FragmentPagerAdapter mPagerAdapter;
+    private List<Fragment> mFragmentlist = new ArrayList<>();
+    private String[] mItems = {"排名","学习","我的"};
+
+    public void onCreate(Bundle saveInstanceState){
+        super.onCreate(saveInstanceState);
+        setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, screenWidth*137/750);
+        params_ll = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, screenWidth*92/750);
+        initViewPager();
+
     }
 
-    public static long getExpiredTime(String dateStr){
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.UK);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Date dateTmp = null;
-        try
-        {
-            dateTmp = dateFormat.parse(dateStr);
-
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        calendar.setTime(dateTmp);
-        Calendar calendar2 = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        calendar2.setTime(dateTmp);
-        calendar2.add(Calendar.MONTH, 1);
-        long expiredTime1 = calendar2.getTimeInMillis() - calendar.getTimeInMillis();
-        calendar2.set(Calendar.DAY_OF_MONTH, calendar2.getActualMaximum(Calendar.DAY_OF_MONTH)-2);
-        calendar2.set(Calendar.HOUR_OF_DAY, 0);
-        calendar2.set(Calendar.MINUTE, 0);
-        calendar2.set(Calendar.SECOND, 0);
-        calendar2.set(Calendar.MILLISECOND, 0);
-        long expiredTime2 = calendar2.getTimeInMillis() - calendar.getTimeInMillis();
-        return expiredTime1 < expiredTime2 ? expiredTime1 : expiredTime2;
-    }
-
-    public static boolean isOneDay(){
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
-        Date date = new Date();
-        long a = date.getTime() - 28800000;
-        if (format.format(new Date(a)).equals("20191231")){
-            return true;
-        }
-        return false;
-    }
-
-    @SuppressLint("NewApi")
-    public static boolean isMayOneDayUtilSixDay(String ymd) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.UK);
-        format.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Date date = null;
-        try{
-            date = format.parse(ymd);
-            DateFormat df1 = DateFormat.getDateInstance(DateFormat.DEFAULT,Locale.CHINA);
-            df1.setTimeZone(TimeZone.getTimeZone("UTC"));
-            String m = df1.format(date).split("年")[1].split("月")[0];
-            String d = df1.format(date).split("年")[1].split("月")[1].split("日")[0];
-            if (Integer.valueOf(m) == 5 &&
-                Integer.valueOf(d) >= 1 && Integer.valueOf(d) <= 6)
-                return true;
-        }catch (Exception e){
-        }
-        return false;
-    }
-
-    public void updateExpired(String date){
-        if(isOneDay()) {
-            expired = 241920;
-        }else if (isMayOneDayUtilSixDay(date)){
-            expired = 190080;
-        } else{
-            expired = getExpiredTime(date) / 10000;
-        }
-        tv.setText("区块链高度 ： "+expired);
-    }
-
-    private void selectData(){
-        update = findViewById(R.id.btn_update);
-        update.setOnClickListener(new View.OnClickListener() {
+    private void initViewPager(){
+        mMainViewPager.setNoScroll(true);
+        runOnUiThread(new Runnable() {
             @Override
-            public void onClick(View view) {
-                String date = et.getText().toString();
-                if (date!=null && !date.isEmpty()){
-//                    main(date);
-                    updateExpired(date);
-                }
+            public void run() {
+                mFragmentlist.clear();
+                mFragmentlist.add(instantiateFragment(mMainViewPager,0, RankingFragment.newInstance()));
+                mFragmentlist.add(instantiateFragment(mMainViewPager,1, StudyFragment.newInstance()));
+                mFragmentlist.add(instantiateFragment(mMainViewPager,2, MineFragment.newInstance()));
+                mMainViewPager.setOffscreenPageLimit(mFragmentlist.size() - 1);
+                mPagerAdapter = new FragmentPagerAdapter(getSupportFragmentManager()) {
+                    @NonNull
+                    @Override
+                    public Fragment getItem(int position) {
+                        return mFragmentlist.get(position);
+                    }
 
+                    @Override
+                    public int getCount() {
+                        return mFragmentlist.size();
+                    }
+                };
+                mMainViewPager.setAdapter(mPagerAdapter);
+                mLlFill.setLayoutParams(params_ll);
+                mMainTabLayout.setLayoutParams(params);
+                mMainTabLayout.setupWithViewPager(mMainViewPager, false);
+                for (int i=0; i<mItems.length; i++){
+                    mMainTabLayout.getTabAt(i).setCustomView(makeTabLayoutView(mItems[i]));
+                }
+                mMainViewPager.setCurrentItem(1);
             }
         });
-        Calendar selectedDate = Calendar.getInstance();
-        Calendar startDate = Calendar.getInstance();
-        startDate.set(2019, 4, 13);
-        Calendar endDate = Calendar.getInstance();
-        endDate.set(2059, 11, 28);
-
-        pvTime = new TimePickerView.Builder(this, new TimePickerView.OnTimeSelectListener() {
-            @Override
-            public void onTimeSelect(Date date, View v) {
-            }
-        })
-                .setType(new boolean[]{true, true, true, true, true, true})
-                .setLabel("年", "月", "日", "时", "分", "秒")
-                .isCenterLabel(true)
-                .setDividerColor(Color.DKGRAY)
-                .setContentSize(21)
-                .setDate(selectedDate)
-                .setRangDate(startDate, endDate)
-                .setDecorView(null)
-                .build();
     }
 
-    public static void main(String args) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        long time = dateFormat.parse(args, new ParsePosition(0)).getTime();
-        Log.e("maintest","获取指定时间的时间戳:" + time);
+    private Fragment instantiateFragment(ViewPager viewPager, int position, Fragment defaultResult){
+        String tag = "android:switcher:" + viewPager.getId() + ":" + position;
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag(tag);
+        return fragment == null ? defaultResult : fragment;
     }
 
+    private View makeTabLayoutView(String name){
+        View view = LayoutInflater.from(mContext).inflate(R.layout.tablayout_main, null);
+        view.setTag(name);
+        ImageView itemImg = view.findViewById(R.id.tablayout_main_img);
+        TextView itemName = view.findViewById(R.id.tablayout_main_text);
+        itemName.setText(name);
+        if (name.equals(mItems[0])) itemImg.setImageResource(R.drawable.tablayout_rank_sele);
+        else if (name.equals(mItems[1])) itemImg.setImageResource(R.drawable.tablayout_learning_sele);
+        else itemImg.setImageResource(R.drawable.tablayout_mine_sele);
+        return view;
+    }
 }

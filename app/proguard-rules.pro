@@ -68,10 +68,15 @@
     *** get* ();
 }
 
+#反射类
+-keep class io.filenet.xlvideoplayer.reflex.**{*;}
+-keep class com.google.android.material.tabs.**{*;}
+
 #保持所有实现 Serializable 接口的类成员
 -keep class * implements android.os.Parcelable{
     public static final android.os.Parcelable$Creator *;
 }
+
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
     private static final java.io.ObjectStreamField[] serialPersistentFields;

@@ -12,13 +12,13 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import io.filenet.xlvideoplayer.R;
-import io.filenet.xlvideoplayer.bean.VideoInfo;
+import io.filenet.xlvideoplayer.bean.ModuleInfo;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> {
 
-    private List<VideoInfo> mVideoList = new ArrayList<>();
+    private List<ModuleInfo> mVideoList = new ArrayList<>();
 
-    public VideoAdapter(List<VideoInfo> mVideoList){
+    public VideoAdapter(List<ModuleInfo> mVideoList){
         this.mVideoList = mVideoList;
     }
 
@@ -32,7 +32,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
         }
     }
 
-    public void update(List<VideoInfo> mVideoList){
+    public void update(List<ModuleInfo> mVideoList){
         this.mVideoList = mVideoList;
     }
 
@@ -46,13 +46,13 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull VideoAdapter.ViewHolder holder, int position) {
-        final VideoInfo mVideoInfo = mVideoList.get(position);
-        holder.mVideoName.setText(mVideoInfo.getmVideoName());
-        holder.mVideoImg.setImageResource(mVideoInfo.getmVideoImg());
+        final ModuleInfo mModuleInfo = mVideoList.get(position);
+        holder.mVideoName.setText(mModuleInfo.getmVideoName());
+        holder.mVideoImg.setImageResource(mModuleInfo.getmVideoImg());
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mOnCompleteListener.resetVideoContent(mVideoInfo);
+                mOnCompleteListener.resetVideoContent(mModuleInfo);
             }
         });
         if (position % 18 == 17) mOnCompleteListener.loadMore();
@@ -67,7 +67,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.ViewHolder> 
 
     public interface OnCompleteListener{
         void loadMore();
-        void resetVideoContent(VideoInfo mVideoInfo);
+        void resetVideoContent(ModuleInfo mModuleInfo);
     }
 
     public void setOnCompleteListener(OnCompleteListener listener){

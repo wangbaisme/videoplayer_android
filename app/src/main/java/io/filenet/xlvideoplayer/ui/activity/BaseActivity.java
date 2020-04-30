@@ -1,143 +1,37 @@
 package io.filenet.xlvideoplayer.ui.activity;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.mob.MobSDK;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import cn.smssdk.EventHandler;
 import cn.smssdk.SMSSDK;
 import io.filenet.xlvideoplayer.R;
+import io.filenet.xlvideoplayer.utils.ToastUtil;
 
-public class BaseActivity extends Activity implements View.OnClickListener {
+public class BaseActivity extends BasicActivity implements View.OnClickListener {
 
-    private TextView mBtnGetCode;
-    private TextView mBtnConfrim;
-    private EditText mEtPhone;
-    private EditText mEtCode;
-
-    private String[] permissions = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_SMS,
-            Manifest.permission.READ_PHONE_STATE
-    };
-    private final int permissionCode = 1001;
-
-    public void onCreate(Bundle saveInstanceState) {
-        super.onCreate(saveInstanceState);
-        MobSDK.submitPolicyGrantResult(true, null);
-        sms_verification();
-        setContentView(R.layout.activity_base);
-        init();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            registerPermission();
-    }
-
-    public void onDestroy() {
-        super.onDestroy();
-        SMSSDK.unregisterAllEventHandler();
-    }
-
-    private void init(){
-        mBtnGetCode = findViewById(R.id.btn_get_code);
-        mBtnConfrim = findViewById(R.id.btn_confrim);
-        mBtnGetCode.setOnClickListener(this);
-        mBtnConfrim.setOnClickListener(this);
-        mEtCode = findViewById(R.id.et_code);
-        mEtPhone = findViewById(R.id.et_phone);
-        mEtPhone.setError("请输入正确号码");
-        mEtPhone.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() != 11 || Integer.valueOf((""+s.charAt(0))) != 1)
-                    mEtPhone.setError("请输入正确号码");
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-
-            }
-        });
-    }
-
-    private void registerPermission(){
-       for (int i=0; i<permissions.length; i++){
-           if (ContextCompat.checkSelfPermission(this, permissions[i]) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, permissions, permissionCode);
-                return;
-           }
-       }
-    }
+    @BindView(R.id.btn_get_code)
+    TextView mBtnGetCode;
+    @BindView(R.id.btn_confrim)
+    TextView mBtnConfrim;
+    @BindView(R.id.et_code)
+    EditText mEtCode;
+    @BindView(R.id.et_phone)
+    EditText mEtPhone;
 
     private String country = "86";
     private String phone = "";
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.btn_get_code:
-                if (mEtPhone.getText().toString().isEmpty())
-                    showMsgToast("号码不能为空");
-                else if (mEtPhone.getText().toString().length() != 11
-                        || Integer.valueOf(mEtPhone.getText().toString().substring(0,1)) != 1)
-                    showMsgToast("请正确输入手机号码");
-                else{
-                    Log.d("maintest","发送验证码");
-                    SMSSDK.getVerificationCode(country,mEtPhone.getText().toString());
-                    phone = mEtPhone.getText().toString();
-                    Message msg=new Message();
-                    msg.arg1 = 10001; //事件
-                    msg.arg2 = 60; //时间
-                    msg.obj = null;
-                    handler.sendMessage(msg);
-                }
-                break;
-            case R.id.btn_confrim:
-                if (phone.isEmpty() || mEtCode.getText().toString().isEmpty()){
-                    showMsgToast("验证码不能为空");
-                    return;
-                }
-                SMSSDK.submitVerificationCode(country,phone,mEtCode.getText().toString());
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void sms_verification(){
-        EventHandler eventHandler = new EventHandler() {
-            public void afterEvent(int event, int result, Object data) {
-                Message msg=new Message();//创建了一个对象
-                msg.arg1=event;
-                msg.arg2=result;
-                msg.obj=data;
-                handler.sendMessage(msg);
-            }
-        };
-
-        SMSSDK.registerEventHandler(eventHandler);
-    }
+    private int timed = 0;
 
     /**
      * 使用Handler来分发Message对象到主线程中，处理事件
@@ -152,22 +46,13 @@ public class BaseActivity extends Activity implements View.OnClickListener {
             Object data=msg.obj;
             if (event == 10001){ //倒计时
                 if (result >= 1){
-                    final int time = result - 1;
-                    mBtnGetCode.setText(result + "s后获取");
+                    timed = result - 1;
+                    mBtnGetCode.setText(result + getString(R.string.s_over_get));
                     mBtnGetCode.setClickable(false);
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Message msgTime=new Message();
-                            msgTime.arg1 = 10001; //事件
-                            msgTime.arg2 = time; //时间
-                            msgTime.obj = null;
-                            handler.sendMessage(msgTime);
-                        }
-                    },1000);
+                    handler.postDelayed(autoTimedTask,1000);
                 }else {
                     mBtnGetCode.setClickable(true);
-                    mBtnGetCode.setText("获取验证码");
+                    mBtnGetCode.setText(getString(R.string.get_verification_code));
                 }
                 return;
             }
@@ -175,7 +60,7 @@ public class BaseActivity extends Activity implements View.OnClickListener {
                 if(result == SMSSDK.RESULT_COMPLETE) {
                     boolean smart = (Boolean)data;
                     if(smart) {
-                        showMsgToast("该手机号已经注册过，请重新输入");
+                        showMsgToast(getString(R.string.the_mobile_number_has_been_registered_please_re_enter));
                         mEtPhone.requestFocus();
                         return;
                     }
@@ -183,7 +68,7 @@ public class BaseActivity extends Activity implements View.OnClickListener {
             }
             if (result==SMSSDK.RESULT_COMPLETE){
                 if (event == SMSSDK.EVENT_SUBMIT_VERIFICATION_CODE) {
-                    showMsgToast("验证码输入正确");
+                    showMsgToast(getString(R.string.verification_passed));
                 }
             }
             else {//其他出错情况
@@ -193,7 +78,99 @@ public class BaseActivity extends Activity implements View.OnClickListener {
 
     };
 
+    Runnable autoTimedTask = new Runnable() {
+        @Override
+        public void run() {
+            Message msgTime=new Message();
+            msgTime.arg1 = 10001; //事件
+            msgTime.arg2 = timed; //时间
+            msgTime.obj = null;
+            handler.sendMessage(msgTime);
+        }
+    };
+
+    public void onCreate(Bundle saveInstanceState) {
+        super.onCreate(saveInstanceState);
+        MobSDK.submitPolicyGrantResult(true, null);
+        sms_verification();
+        setContentView(R.layout.activity_base);
+        ButterKnife.bind(this);
+        init();
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        SMSSDK.unregisterAllEventHandler();
+    }
+
+    public void sms_verification(){
+        EventHandler eventHandler = new EventHandler() {
+            public void afterEvent(int event, int result, Object data) {
+                Message msg=new Message();//创建了一个对象
+                msg.arg1=event;
+                msg.arg2=result;
+                msg.obj=data;
+                handler.sendMessage(msg);
+            }
+        };
+        SMSSDK.registerEventHandler(eventHandler);
+    }
+
+    private void init(){
+        mBtnGetCode.setOnClickListener(this);
+        mBtnConfrim.setOnClickListener(this);
+        mEtPhone.setError(getString(R.string.please_enter_the_correct_number));
+        mEtPhone.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.length() != 11 || Integer.valueOf((""+s.charAt(0))) != 1)
+                    mEtPhone.setError(getString(R.string.please_enter_the_correct_number));
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btn_get_code:
+                if (mEtPhone.getText().toString().isEmpty())
+                    showMsgToast(getString(R.string.number_is_null));
+                else if (mEtPhone.getText().toString().length() != 11
+                        || Integer.valueOf(mEtPhone.getText().toString().substring(0,1)) != 1)
+                    showMsgToast(getString(R.string.please_enter_the_correct_number));
+                else{
+                    SMSSDK.getVerificationCode(country,mEtPhone.getText().toString());
+                    phone = mEtPhone.getText().toString();
+                    Message msg=new Message();
+                    msg.arg1 = 10001; //事件
+                    msg.arg2 = 60; //时间
+                    msg.obj = null;
+                    handler.sendMessage(msg);
+                }
+                break;
+            case R.id.btn_confrim:
+                if (phone.isEmpty() || mEtCode.getText().toString().isEmpty()){
+                    showMsgToast(getString(R.string.verification_code_is_null));
+                    return;
+                }
+                SMSSDK.submitVerificationCode(country,phone,mEtCode.getText().toString());
+                break;
+            default:
+                break;
+        }
+    }
+
     private void showMsgToast(String content){
-        Toast.makeText(this, content, Toast.LENGTH_SHORT).show();
+        ToastUtil.getInstance(getApplicationContext()).showShortToast(content);
     }
 }
